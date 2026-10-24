@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -56,6 +57,12 @@ public class InteracaoService {
     ) {
         chamadoService.buscarPorId(chamadoId);
         return interacaoRepository.findByChamadoIdOrderByDataHoraAsc(chamadoId, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Interacao> listarTodasPorChamado(Long chamadoId) {
+        chamadoService.buscarPorId(chamadoId);
+        return interacaoRepository.findAllByChamadoIdOrderByDataHoraAsc(chamadoId);
     }
 
     private void exigirTexto(String texto) {
