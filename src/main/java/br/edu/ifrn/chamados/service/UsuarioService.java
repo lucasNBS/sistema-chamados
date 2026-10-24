@@ -5,6 +5,7 @@ import br.edu.ifrn.chamados.exception.RegraNegocioException;
 import br.edu.ifrn.chamados.model.Setor;
 import br.edu.ifrn.chamados.model.Usuario;
 import br.edu.ifrn.chamados.model.enums.TipoUsuario;
+import br.edu.ifrn.chamados.repository.ChamadoRepository;
 import br.edu.ifrn.chamados.repository.UsuarioRepository;
 import br.edu.ifrn.chamados.specification.FiltroPorNome;
 
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
+    private final ChamadoRepository chamadoRepository;
     private final SetorService setorService;
 
     @Transactional(readOnly = true)
@@ -78,8 +80,31 @@ public class UsuarioService {
             throw new RegraNegocioException("Email já cadastrado");
         }
 
+        validarAlteracaoDeVinculos(usuario, tipo, setorId);
         preencherDados(usuario, nome, email, matricula, tipo, setorId);
         return usuario;
+    }
+
+    private void validarAlteracaoDeVinculos(
+        Usuario usuario,
+        TipoUsuario tipo,
+        Long setorId
+    ) {
+        Long id = usuario.getId();
+        if (usuario.getTipo() != tipo) {
+            if (usuario.getTipo() == TipoUsuario.SOLICITANTE && chamadoRepository.existsBySolicitanteId(id)) {
+                throw new RegraNegocioException("Não é possível alterar o tipo: usuário possui chamados como solicitante");
+            }
+            if (usuario.getTipo() == TipoUsuario.TECNICO && chamadoRepository.existsByTecnicoId(id)) {
+                throw new RegraNegocioException("Não é possível alterar o tipo: usuário possui chamados atribuídos como técnico");
+            }
+        }
+
+        if (usuario.getTipo() == TipoUsuario.TECNICO && tipo == TipoUsuario.TECNICO
+                && !usuario.getSetor().getId().equals(setorId)
+                && chamadoRepository.existsByTecnicoId(id)) {
+            throw new RegraNegocioException("Não é possível alterar o setor: técnico possui chamados atribuídos");
+        }
     }
 
     private void preencherDados(
