@@ -1,0 +1,217 @@
+# Requisições para a extensão REST Client (VS Code).
+
+@baseUrl = http://localhost:8080
+
+### Criar setor principal
+# @name criarSetor
+POST {{baseUrl}}/setores
+Content-Type: application/json
+
+{
+  "nome": "Tecnologia da Informação",
+  "sigla": "TI-HTTP"
+}
+
+### Buscar setor por ID
+GET {{baseUrl}}/setores/{{criarSetor.response.body.$.id}}
+
+### Listar setores com filtro e paginação
+GET {{baseUrl}}/setores?nome=Tecnologia&page=0&size=10&sort=nome,asc
+
+### Atualizar setor
+PUT {{baseUrl}}/setores/{{criarSetor.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "nome": "Tecnologia da Informação e Suporte",
+  "sigla": "TI-HTTP"
+}
+
+### Criar categoria
+# @name criarCategoria
+POST {{baseUrl}}/categorias
+Content-Type: application/json
+
+{
+  "nome": "Computadores",
+  "descricao": "Problemas em computadores e notebooks",
+  "setorId": {{criarSetor.response.body.$.id}}
+}
+
+### Buscar categoria por ID
+GET {{baseUrl}}/categorias/{{criarCategoria.response.body.$.id}}
+
+### Listar categorias com filtros e paginação
+GET {{baseUrl}}/categorias?nome=Computadores&setorId={{criarSetor.response.body.$.id}}&page=0&size=10&sort=nome,asc
+
+### Listar categorias de um setor
+GET {{baseUrl}}/setores/{{criarSetor.response.body.$.id}}/categorias?page=0&size=10
+
+### Atualizar categoria
+PUT {{baseUrl}}/categorias/{{criarCategoria.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "nome": "Computadores e notebooks",
+  "descricao": "Suporte a equipamentos de informática",
+  "setorId": {{criarSetor.response.body.$.id}}
+}
+
+### Criar solicitante (sem setorId)
+# @name criarSolicitante
+POST {{baseUrl}}/usuarios
+Content-Type: application/json
+
+{
+  "nome": "Ana Silva",
+  "email": "ana.http@example.com",
+  "matricula": "SOL-HTTP-001",
+  "tipo": "SOLICITANTE"
+}
+
+### Criar técnico do mesmo setor da categoria
+# @name criarTecnico
+POST {{baseUrl}}/usuarios
+Content-Type: application/json
+
+{
+  "nome": "Bruno Souza",
+  "email": "bruno.http@example.com",
+  "matricula": "TEC-HTTP-001",
+  "tipo": "TECNICO",
+  "setorId": {{criarSetor.response.body.$.id}}
+}
+
+### Buscar usuário por ID
+GET {{baseUrl}}/usuarios/{{criarSolicitante.response.body.$.id}}
+
+### Listar usuários com filtros e paginação
+GET {{baseUrl}}/usuarios?nome=Bruno&tipo=TECNICO&setorId={{criarSetor.response.body.$.id}}&page=0&size=10&sort=nome,asc
+
+### Atualizar usuário
+PUT {{baseUrl}}/usuarios/{{criarSolicitante.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "nome": "Ana Maria Silva",
+  "email": "ana.http@example.com",
+  "matricula": "SOL-HTTP-001",
+  "tipo": "SOLICITANTE"
+}
+
+### Abrir chamado que será resolvido
+# @name criarChamado
+POST {{baseUrl}}/chamados
+Content-Type: application/json
+
+{
+  "solicitanteId": {{criarSolicitante.response.body.$.id}},
+  "categoriaId": {{criarCategoria.response.body.$.id}},
+  "titulo": "Notebook não liga",
+  "descricao": "O notebook não liga após pressionar o botão.",
+  "local": "Sala 101",
+  "prioridade": "ALTA"
+}
+
+### Buscar detalhes do chamado, incluindo interações
+GET {{baseUrl}}/chamados/{{criarChamado.response.body.$.id}}
+
+### Listar chamados com todos os filtros e paginação
+# Datas no formato LocalDateTime (sem fuso horário); ajuste o intervalo se necessário.
+GET {{baseUrl}}/chamados?status=ABERTO&prioridade=ALTA&setorId={{criarSetor.response.body.$.id}}&categoriaId={{criarCategoria.response.body.$.id}}&solicitanteId={{criarSolicitante.response.body.$.id}}&dataInicio=2020-01-01T00:00:00&dataFim=2099-12-31T23:59:59&page=0&size=10&sort=dataAbertura,desc
+
+### Registrar interação do solicitante
+POST {{baseUrl}}/chamados/{{criarChamado.response.body.$.id}}/interacoes
+Content-Type: application/json
+
+{
+  "autorId": {{criarSolicitante.response.body.$.id}},
+  "texto": "O carregador está conectado e a tomada funciona."
+}
+
+### Técnico assume o chamado aberto
+PATCH {{baseUrl}}/chamados/{{criarChamado.response.body.$.id}}/assumir
+Content-Type: application/json
+
+{
+  "tecnicoId": {{criarTecnico.response.body.$.id}}
+}
+
+### Registrar interação do técnico
+POST {{baseUrl}}/chamados/{{criarChamado.response.body.$.id}}/interacoes
+Content-Type: application/json
+
+{
+  "autorId": {{criarTecnico.response.body.$.id}},
+  "texto": "Vou verificar a fonte de alimentação."
+}
+
+### Listar chamados atribuídos ao técnico
+GET {{baseUrl}}/usuarios/{{criarTecnico.response.body.$.id}}/chamados?status=EM_ATENDIMENTO&page=0&size=10
+
+### Listar chamados filtrados pelo técnico
+GET {{baseUrl}}/chamados?tecnicoId={{criarTecnico.response.body.$.id}}&status=EM_ATENDIMENTO&page=0&size=10
+
+### Resolver chamado com o técnico atribuído
+PATCH {{baseUrl}}/chamados/{{criarChamado.response.body.$.id}}/resolver
+Content-Type: application/json
+
+{
+  "tecnicoId": {{criarTecnico.response.body.$.id}},
+  "solucao": "Fonte de alimentação substituída e notebook testado."
+}
+
+### Conferir chamado resolvido e histórico de interações
+GET {{baseUrl}}/chamados/{{criarChamado.response.body.$.id}}
+
+### Abrir outro chamado para testar cancelamento
+# @name criarChamadoCancelavel
+POST {{baseUrl}}/chamados
+Content-Type: application/json
+
+{
+  "solicitanteId": {{criarSolicitante.response.body.$.id}},
+  "categoriaId": {{criarCategoria.response.body.$.id}},
+  "titulo": "Solicitação de revisão",
+  "descricao": "Solicitação aberta para testar o cancelamento.",
+  "local": "Sala 102",
+  "prioridade": "BAIXA"
+}
+
+### Cancelar chamado ainda aberto pelo próprio solicitante
+PATCH {{baseUrl}}/chamados/{{criarChamadoCancelavel.response.body.$.id}}/cancelar
+Content-Type: application/json
+
+{
+  "solicitanteId": {{criarSolicitante.response.body.$.id}}
+}
+
+### Listar chamados cancelados do solicitante
+GET {{baseUrl}}/usuarios/{{criarSolicitante.response.body.$.id}}/chamados?status=CANCELADO&page=0&size=10
+
+### Criar setor descartável para testar exclusões
+# @name criarSetorDescartavel
+POST {{baseUrl}}/setores
+Content-Type: application/json
+
+{
+  "nome": "Setor descartável HTTP",
+  "sigla": "TMP-HTTP"
+}
+
+### Criar categoria descartável, sem chamados vinculados
+# @name criarCategoriaDescartavel
+POST {{baseUrl}}/categorias
+Content-Type: application/json
+
+{
+  "nome": "Categoria descartável HTTP",
+  "descricao": "Criada para testar DELETE",
+  "setorId": {{criarSetorDescartavel.response.body.$.id}}
+}
+
+### Excluir categoria descartável
+DELETE {{baseUrl}}/categorias/{{criarCategoriaDescartavel.response.body.$.id}}
+
+### Excluir setor descartável após excluir sua categoria
+DELETE {{baseUrl}}/setores/{{criarSetorDescartavel.response.body.$.id}}
