@@ -15,6 +15,10 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>, JpaSpec
 
   boolean existsByEmail(String email);
 
+  boolean existsByEmailAndIdNot(String email, Long id);
+
+  boolean existsBySetorId(Long setorId);
+
   Page<Usuario> findByNomeContainingIgnoreCase(
     String nome,
     Pageable pageable

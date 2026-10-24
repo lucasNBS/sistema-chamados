@@ -1,19 +1,15 @@
 package br.edu.ifrn.chamados.repository;
 
 import br.edu.ifrn.chamados.model.Setor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.Optional;
 
-public interface SetorRepository extends JpaRepository<Setor, Long> {
+public interface SetorRepository extends JpaRepository<Setor, Long>, JpaSpecificationExecutor<Setor> {
   Optional<Setor> findBySigla(String sigla);
 
-  Page<Setor> findByNomeContainingIgnoreCase(
-    String nome,
-    Pageable pageable
-  );
-
   boolean existsBySigla(String sigla);
+
+  boolean existsBySiglaAndIdNot(String sigla, Long id);
 }

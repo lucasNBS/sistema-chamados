@@ -5,20 +5,10 @@ import br.edu.ifrn.chamados.model.Categoria;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface CategoriaRepository extends JpaRepository<Categoria, Long> {
+public interface CategoriaRepository extends JpaRepository<Categoria, Long>, JpaSpecificationExecutor<Categoria> {
   Page<Categoria> findBySetorId(
-    Long setorId,
-    Pageable pageable
-  );
-
-  Page<Categoria> findByNomeContainingIgnoreCase(
-    String nome,
-    Pageable pageable
-  );
-
-  Page<Categoria> findByNomeContainingIgnoreCaseAndSetorId(
-    String nome,
     Long setorId,
     Pageable pageable
   );
